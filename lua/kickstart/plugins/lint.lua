@@ -5,8 +5,21 @@ return {
     event = { 'BufReadPre', 'BufNewFile' },
     config = function()
       local lint = require 'lint'
+      local mypy = require('lint').linters.mypy
+      mypy.args = {
+        '--show-column-numbers',
+        '--show-error-end',
+        '--hide-error-codes',
+        '--hide-error-context',
+        '--no-color-output',
+        '--no-error-summary',
+        '--no-pretty',
+        '--python-executable .venv/bin/python',
+      }
       lint.linters_by_ft = {
-        markdown = { 'markdownlint' },
+        -- markdown = { 'markdownlint' },
+        markdown = { 'vale' },
+        python = { 'mypy' },
       }
 
       -- To allow other plugins to add linters to require('lint').linters_by_ft,

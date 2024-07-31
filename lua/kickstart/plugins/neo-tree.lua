@@ -32,6 +32,17 @@ return {
       follow_current_file = true,
       hijack_netrw_behavior = 'open_current',
     },
+    event_handlers = {
+      {
+        event = 'file_open_requested',
+        handler = function()
+          -- auto close
+          -- vimc.cmd("Neotree close")
+          -- OR
+          require('neo-tree.command').execute { action = 'close' }
+        end,
+      },
+    },
     popup_border_style = 'rounded',
     close_if_last_window = true,
   },

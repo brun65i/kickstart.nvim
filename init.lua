@@ -122,6 +122,15 @@ vim.opt.clipboard = 'unnamedplus'
 -- Enable break indent
 vim.opt.breakindent = true
 
+-- size of a hard tabstop (ts).
+vim.opt.tabstop = 2
+-- size of an indentation (sw).
+vim.opt.shiftwidth = 2
+-- always uses spaces instead of tab characters (et).
+vim.opt.expandtab = true
+-- number of spaces a <Tab> counts for. When 0, feature is off (sts).
+vim.opt.softtabstop = 2
+
 -- Save undo history
 vim.opt.undofile = true
 
@@ -162,6 +171,7 @@ vim.opt.scrolloff = 15
 -- Looks like still not relesed https://www.reddit.com/r/neovim/comments/16xz3q9/treesitter_highlighted_folds_are_now_in_neovim/
 -- vim.opt.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
 -- vim.opt.foldtext = 'v:lua.vim.treesitter.foldtext()'
+
 -- Do not wrap text longer than screean size
 vim.opt.wrap = false
 
@@ -237,7 +247,7 @@ vim.opt.rtp:prepend(lazypath)
 -- NOTE: Here is where you install your plugins.
 require('lazy').setup({
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
-  'tpope/vim-sleuth', -- Detect tabstop and shiftwidth automatically
+  -- 'tpope/vim-sleuth', -- Detect tabstop and shiftwidth automatically
 
   -- NOTE: Plugins can also be added by using a table,
   -- with the first argument being the link and the following
@@ -273,19 +283,24 @@ require('lazy').setup({
       require('which-key').setup()
 
       -- Document existing key chains
-      require('which-key').register {
-        ['<leader>c'] = { name = '[C]ode', _ = 'which_key_ignore' },
-        ['<leader>d'] = { name = '[D]ocument', _ = 'which_key_ignore' },
-        ['<leader>r'] = { name = '[R]ename', _ = 'which_key_ignore' },
-        ['<leader>s'] = { name = '[S]earch', _ = 'which_key_ignore' },
-        ['<leader>w'] = { name = '[W]orkspace', _ = 'which_key_ignore' },
-        ['<leader>t'] = { name = '[T]oggle', _ = 'which_key_ignore' },
-        ['<leader>h'] = { name = 'Git [H]unk', _ = 'which_key_ignore' },
+      require('which-key').add {
+        { '<leader>c', group = '[C]ode' },
+        { '<leader>c_', hidden = true },
+        { '<leader>d', group = '[D]ocument' },
+        { '<leader>d_', hidden = true },
+        { '<leader>h', group = 'Git [H]unk' },
+        { '<leader>h_', hidden = true },
+        { '<leader>r', group = '[R]ename' },
+        { '<leader>r_', hidden = true },
+        { '<leader>s', group = '[S]earch' },
+        { '<leader>s_', hidden = true },
+        { '<leader>t', group = '[T]oggle' },
+        { '<leader>t_', hidden = true },
+        { '<leader>w', group = '[W]orkspace' },
+        { '<leader>w_', hidden = true },
       }
       -- visual mode
-      require('which-key').register({
-        ['<leader>h'] = { 'Git [H]unk' },
-      }, { mode = 'v' })
+      require('which-key').add { '<leader>h', desc = 'Git [H]unk', mode = 'v' }
     end,
   },
 
@@ -367,7 +382,13 @@ require('lazy').setup({
       local builtin = require 'telescope.builtin'
       vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
       vim.keymap.set('n', '<leader>sk', builtin.keymaps, { desc = '[S]earch [K]eymaps' })
-      vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
+      -- vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
+      vim.keymap.set(
+        'n',
+        '<Leader>sf',
+        ':lua require"telescope.builtin".find_files({ find_command = {"rg", "--files", "--hidden", "-g", "!.git" }})<CR>',
+        { noremap = true, silent = true, desc = '[S]earch [F]iles' }
+      )
       vim.keymap.set('n', '<leader>ss', builtin.builtin, { desc = '[S]earch [S]elect Telescope' })
       vim.keymap.set('n', '<leader>sw', builtin.grep_string, { desc = '[S]earch current [W]ord' })
       vim.keymap.set('n', '<leader>sg', builtin.live_grep, { desc = '[S]earch by [G]rep' })
@@ -416,6 +437,9 @@ require('lazy').setup({
       -- `neodev` configures Lua LSP for your Neovim config, runtime and plugins
       -- used for completion, annotations and signatures of Neovim apis
       { 'folke/neodev.nvim', opts = {} },
+
+      -- Json and Yaml schemas
+      'b0o/schemastore.nvim',
     },
     config = function()
       -- Brief aside: **What is LSP?**
@@ -585,13 +609,48 @@ require('lazy').setup({
             },
           },
         },
-        pyright = {},
+        pyright = {
+          settings = {
+            pyright = { autoImportCompletion = true },
+            python = {
+              analysis = {
+                autoSearchPaths = true,
+                diagnosticMode = 'openFilesOnly',
+                useLibraryCodeForTypes = true,
+                typeCheckingMode = 'off',
+              },
+              pythonPath = './.venv/bin/python',
+            },
+          },
+        },
         ruff = {},
         terraformls = {},
         ansiblels = {},
         dockerls = {},
         docker_compose_language_service = {},
         tsserver = {},
+        yamlls = {
+          settings = {
+            yaml = {
+              schemaStore = {
+                -- You must disable built-in schemaStore support if you want to use
+                -- this plugin and its advanced options like `ignore`.
+                enable = false,
+                -- Avoid TypeError: Cannot read properties of undefined (reading 'length')
+                url = '',
+              },
+              schemas = require('schemastore').yaml.schemas(),
+            },
+          },
+        },
+        jsonls = {
+          settings = {
+            json = {
+              schemas = require('schemastore').json.schemas(),
+              validate = { enable = true },
+            },
+          },
+        },
       }
 
       -- Ensure the servers and tools above are installed
@@ -624,7 +683,6 @@ require('lazy').setup({
       }
     end,
   },
-
   { -- Autoformat
     'stevearc/conform.nvim',
     lazy = false,
@@ -867,7 +925,7 @@ require('lazy').setup({
         --  the list of additional_vim_regex_highlighting and disabled languages for indent.
         additional_vim_regex_highlighting = { 'ruby' },
       },
-      indent = { enable = true, disable = { 'ruby' } },
+      indent = { enable = true, disable = { 'ruby', 'yaml' } },
     },
     config = function(_, opts)
       -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
@@ -897,7 +955,7 @@ require('lazy').setup({
   --
   -- require 'kickstart.plugins.debug',
   require 'kickstart.plugins.indent_line',
-  -- require 'kickstart.plugins.lint',
+  require 'kickstart.plugins.lint',
   require 'kickstart.plugins.autopairs',
   require 'kickstart.plugins.neo-tree',
   require 'kickstart.plugins.gitsigns',
